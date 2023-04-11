@@ -10,13 +10,13 @@ import (
 )
 
 func TestNewSkyWalkingHook(t *testing.T) {
-	tracer, err := go2sky.NewTracer("127.0.0.1:11800")
+	tracer, err := go2sky.NewTracer("34.87.14.254:11800")
 	if err != nil {
 		t.Error(err)
 		return
 	}
 	var ctx = context.Background()
-	hook := NewSkyWalkingHook(tracer)
+	hook := NewSkyWalkingHook(tracer, "redis")
 	rdb := goredis.NewClient(&goredis.Options{
 		Addr:     "127.0.0.1:6379",
 		Password: "",

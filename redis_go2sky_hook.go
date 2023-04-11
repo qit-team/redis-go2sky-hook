@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/SkyAPM/go2sky"
-	v3 "github.com/SkyAPM/go2sky/reporter/grpc/language-agent"
 	goredis "github.com/go-redis/redis/v8"
+	v3 "skywalking.apache.org/repo/goapi/collect/language/agent/v3"
 )
 
 const (
@@ -14,21 +14,22 @@ const (
 
 type SkyWalkingHook struct {
 	tracer *go2sky.Tracer
+	peer   string
 }
 
 type Go2skyKey interface{}
 
-func NewSkyWalkingHook(tracer *go2sky.Tracer) *SkyWalkingHook {
-	return &SkyWalkingHook{tracer: tracer}
+func NewSkyWalkingHook(tracer *go2sky.Tracer, peer string) *SkyWalkingHook {
+	return &SkyWalkingHook{tracer: tracer, peer: peer}
 }
 
 func (h *SkyWalkingHook) BeforeProcess(ctx context.Context, cmd goredis.Cmder) (context.Context, error) {
-	peer := "redis"
+	peer := h.peer
 	if p, ok := ctx.Value("peer").(string); ok {
 		peer = p
 	}
 	args := fmt.Sprintf("%v", cmd.Args())
-	span, err := h.tracer.CreateExitSpan(ctx, fmt.Sprintf("%v %v", cmd.Name(), args), peer, func(header string) error {
+	span, err := h.tracer.CreateExitSpan(ctx, fmt.Sprintf("%v %v", cmd.Name(), args), peer, func(header, value string) error {
 		return nil
 	})
 	if err != nil {
@@ -61,7 +62,7 @@ func (h *SkyWalkingHook) BeforeProcessPipeline(ctx context.Context, cmds []gored
 		pipelineInfo += fmt.Sprintf("%v %v", cmd.Name(), cmd.Args())
 		cmdStr += " " + cmd.Name()
 	}
-	span, err := h.tracer.CreateExitSpan(ctx, pipelineInfo, peer, func(header string) error {
+	span, err := h.tracer.CreateExitSpan(ctx, pipelineInfo, peer, func(header, value string) error {
 		return nil
 	})
 	if err != nil {
